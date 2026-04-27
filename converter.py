@@ -67,51 +67,56 @@ def process_netlist_logic(uploaded_files):
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
-# Correct Direct Link for the Logo
 logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.devcontainer/MindBoard-Logo.jpg"
 
 st.markdown(f"""
     <style>
-    /* Fixed background watermark - stays static on scroll */
+    /* Background configuration with enlarged logo */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
-        background-attachment: fixed; /* Crucial: background does not move on scroll */
-        background-position: center 30%; /* Raised up to blend with upload box */
-        background-size: 35%; /* Optimal size */
+        background-attachment: fixed;
+        /* Positioned to align logo lines with the upload box */
+        background-position: center 23%; 
+        background-size: 65%; 
     }}
     
-    /* Overlay to make it 20% more transparent (approx 0.08 intensity) */
+    /* Watermark overlay - Increased transparency */
     .stApp::before {{
         content: "";
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(255, 255, 255, 0.92); /* Higher white opacity for lighter logo */
+        background-color: rgba(255, 255, 255, 0.96); 
         z-index: -1;
     }}
 
-    /* Welcome header: Larger and slightly shifted left */
+    /* Prominent bold header styling */
     .centered-title {{
         text-align: center;
         width: 100%;
-        padding-top: 10px;
-        padding-bottom: 20px;
-        font-size: 3em !important; /* Larger text */
-        margin-left: -5% !important; /* Shifted left */
-        font-weight: 700;
-        color: #1e1e1e;
+        padding-top: 5px;
+        padding-bottom: 25px;
+        font-size: 4em !important; 
+        font-weight: 900 !important; 
+        color: #002366; 
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        margin-left: -3% !important;
     }}
     
-    /* Ensure UI elements are above the watermark layer */
+    /* Ensure UI components sit above the background layer */
     .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
         position: relative;
         z-index: 10;
+    }}
+
+    /* Vertical alignment for the uploader component */
+    [data-testid="stFileUploader"] {{
+        margin-top: 40px;
     }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
     """, unsafe_allow_html=True)
 
-# Main structure
 col1, col2 = st.columns([1, 1])
 
 with col1:
@@ -139,7 +144,5 @@ if uploaded_files:
         )
 
     st.divider()
-    # The Subheader for Preview
     st.subheader("🔍 Full File Preview")
-    # Displaying the entire result_text allows full scrolling while background stays fixed
     st.text_area("Final netlist structure:", value=result_text, height=600)
