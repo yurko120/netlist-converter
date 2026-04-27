@@ -64,7 +64,6 @@ def process_single_file(uploaded_file):
                 if current_net:
                     nets_data[current_net].extend(parts)
 
-    # Final Assembly for the file
     final_output = ["$PACKAGES"]
     final_output.extend(packages)
     final_output.append("$NETS")
@@ -85,7 +84,6 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
-    /* Main Background */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -102,41 +100,32 @@ st.markdown(f"""
         z-index: -1;
     }}
 
-    /* Compact Layout Tweak */
     .block-container {{
-        padding-top: 2rem !important;
+        padding-top: 1.5rem !important;
         padding-bottom: 0rem !important;
     }}
 
-    [data-testid="column"] {{
-        padding-left: 10px !important;
-        padding-right: 10px !important;
-    }}
-
-    /* Title Styling */
     .centered-title {{
         text-align: center;
         color: #000000;
-        font-size: 3em !important; 
+        font-size: 2.8em !important; 
         font-weight: 900 !important; 
-        margin-bottom: 10px !important;
-        padding-bottom: 0px !important;
+        margin-bottom: 5px !important;
     }}
 
-    /* Compact Input & Labels */
     [data-testid="stTextInput"] label {{
-        font-size: 1rem !important; 
+        font-size: 0.95rem !important; 
         font-weight: 700 !important; 
         color: #000000 !important;
-        margin-bottom: 0px !important;
+        margin-bottom: -10px !important;
     }}
     
+    /* Tighter vertical spacing */
     div[data-testid="stVerticalBlock"] > div {{
-        padding-bottom: 5px !important;
+        padding-bottom: 2px !important;
         margin-bottom: 0px !important;
     }}
 
-    /* Preview Area Styling */
     .stTextArea textarea {{
         background-color: rgba(255, 255, 255, 0.6) !important; 
         border: 2px solid #000000 !important;
@@ -144,13 +133,12 @@ st.markdown(f"""
         color: #000000 !important;
         font-family: 'Courier New', monospace;
         font-weight: 800 !important; 
-        font-size: 1em !important;
     }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
     """, unsafe_allow_html=True)
 
-col1, col2 = st.columns([1, 1], gap="small")
+col1, col2 = st.columns(2) # Removed 'gap' to prevent errors
 
 with col1:
     st.markdown("### **1. Upload Source Files**")
@@ -162,13 +150,11 @@ if uploaded_files:
     with col2:
         st.markdown("### **2. File Settings & Download**")
         for idx, f in enumerate(uploaded_files):
-            # Compact display for each file
             original_name = f.name.rsplit('.', 1)[0]
             
-            # Using columns inside to make the name field and download button tighter
             custom_name = st.text_input(f"New name for: {f.name}", 
                                         value=f"{original_name}_transformed", 
-                                        key=f"name_{idx}")
+                                        key=f"name_input_{idx}")
             
             content = process_single_file(f)
             processed_files_data.append({"display_name": custom_name, "content": content})
@@ -179,10 +165,10 @@ if uploaded_files:
                 data=content,
                 file_name=full_filename,
                 mime="text/plain",
-                key=f"dl_{idx}",
+                key=f"dl_btn_{idx}",
                 use_container_width=True
             )
-            st.markdown("<hr style='margin: 5px 0;'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 8px 0; border: 0; border-top: 1px solid #ccc;'>", unsafe_allow_html=True)
 
     st.divider()
     st.subheader("🔍 Technical Preview (Per File)")
@@ -195,4 +181,4 @@ if uploaded_files:
             st.text_area(f"Preview: {processed_files_data[idx]['display_name']}", 
                          value=processed_files_data[idx]['content'], 
                          height=450, 
-                         key
+                         key=f"preview_text_{idx}")
