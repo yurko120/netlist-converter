@@ -40,45 +40,47 @@ def process_netlist_logic(uploaded_files):
                         packages.append(f"{pkg_str}; {des}")
 
             elif zone == "END":
-                # Handle lines starting with * (continuation of a net)
                 if line.startswith('*'):
                     if current_net:
-                        # Extract pins, removing commas or semicolons
+                        # Add pins from continuation lines to the dictionary
                         pins = line[1:].replace(',', ' ').replace(';', ' ').split()
                         nets_data[current_net].extend(pins)
                 else:
-                    # New net definition
                     parts = line.replace(',', ' ').split()
                     if parts:
-                        # First part is the net name (clean semicolon if attached)
+                        # Extract net name correctly without semicolon
                         net_name = parts[0].split(';')[0].strip()
                         current_net = net_name
                         if current_net not in nets_data:
                             nets_data[current_net] = []
-                        # Remaining parts are pins
+                        # Add initial pins from the first net line
                         pins = " ".join(parts[1:]).replace(';', ' ').split()
                         nets_data[current_net].extend(pins)
 
+        # Build the final document
         final_output.append("$PACKAGES")
         final_output.extend(packages)
         final_output.append("$NETS")
         
         for net_name, pins in nets_data.items():
-            # RULE OF 10: Force splitting pins into chunks of 10
-            # Every single line will start with NetName;
             if not pins:
                 continue
+            
+            # THE FIX: Split pins into chunks of 10
+            # Each line starts with: NetName; Pin1 Pin2 ... Pin10
             for i in range(0, len(pins), 10):
                 chunk = pins[i:i+10]
-                final_output.append(f"{net_name}; {' '.join(chunk)}")
+                line_content = f"{net_name}; {' '.join(chunk)}"
+                final_output.append(line_content)
         
         final_output.append("$End")
 
     return "\n".join(final_output)
 
+# UI Settings
 st.set_page_config(page_title="Netlist Converter", page_icon="⚡")
 st.title("⚡ Altium to Allegro Netlist Converter")
-st.write("Convert .NET files to Allegro format with Rule of 10 for Nets.")
+st.write("Convert .NET files with mandatory Net Name on every line (Rule of 10).")
 
 uploaded_files = st.file_uploader("Upload NET files", accept_multiple_files=True)
 
