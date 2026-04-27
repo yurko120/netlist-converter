@@ -71,13 +71,13 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
-    /* Background configuration - Logo moved significantly lower */
+    /* Background configuration - Logo positioned significantly lower */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
         background-attachment: fixed;
-        /* Positioned at 55% to ensure lines align with the uploader box */
-        background-position: center 55%; 
+        /* Lowered to 65% to align lines with the uploader box */
+        background-position: center 65%; 
         background-size: 65%; 
     }}
     
@@ -90,12 +90,13 @@ st.markdown(f"""
         z-index: -1;
     }}
 
-    /* Title styling - Increased bottom padding for layout clarity */
+    /* Title styling */
     .centered-title {{
         text-align: center;
         width: 100%;
         padding-top: 5px;
-        padding-bottom: 100px; 
+        /* Increased padding to create space for the lowered logo */
+        padding-bottom: 130px; 
         font-size: 4em !important; 
         font-weight: 900 !important; 
         color: #002366; 
@@ -109,7 +110,7 @@ st.markdown(f"""
         z-index: 10;
     }}
 
-    /* Vertical spacing adjustment */
+    /* Vertical spacing adjustment for the uploader */
     [data-testid="stFileUploader"] {{
         margin-top: 50px;
     }}
