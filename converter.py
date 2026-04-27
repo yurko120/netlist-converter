@@ -67,12 +67,12 @@ def process_netlist_logic(uploaded_files):
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
-# Fixed Image URL
+# Correct way to handle the URL in Python
 logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.devcontainer/MindBoard-Logo.jpg"
 
 st.markdown(f"""
     <style>
-    /* Background with Logo */
+    /* Background setup */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -81,7 +81,6 @@ st.markdown(f"""
         background-size: 45%; 
     }}
     
-    /* Global transparency layer */
     .stApp::before {{
         content: "";
         position: fixed;
@@ -99,20 +98,23 @@ st.markdown(f"""
         color: #002366; 
     }}
 
-    /* THE ULTRA-TRANSPARENT PREVIEW BOX */
+    /* THE FIX: TOTAL TRANSPARENCY FOR THE TEXT AREA */
     .stTextArea textarea {{
-        background-color: rgba(255, 255, 255, 0.01) !important; /* Almost 100% transparent */
-        backdrop-filter: blur(1px) !important; /* Very low blur to keep logo clear */
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        border-radius: 10px;
+        background-color: transparent !important; /* No background color */
+        backdrop-filter: none !important; /* No blur to hide the logo */
+        border: none !important; /* Remove borders */
         color: #000000 !important;
         font-family: 'Courier New', monospace;
-        font-weight: 800 !important; /* High contrast bold text */
-        font-size: 1.2em !important;
-        padding: 20px;
+        font-weight: 800 !important; /* Bold for contrast */
+        font-size: 1.25em !important;
+        padding: 10px;
+    }}
+    
+    /* Ensuring the container of the textarea is also transparent */
+    div[data-baseweb="textarea"] {{
+        background-color: transparent !important;
     }}
 
-    /* Layout Elements */
     .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
         position: relative;
         z-index: 10;
@@ -149,4 +151,4 @@ if uploaded_files:
 
     st.divider()
     st.subheader("🔍 Full File Preview")
-    st.text_area("Final netlist structure:", value=result_text, height=500)
+    st.text_area("Final netlist structure:", value=result_text, height=600)
