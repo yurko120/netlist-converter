@@ -6,7 +6,6 @@ import datetime
 def process_netlist_logic(uploaded_files):
     all_results = []
     for uploaded_file in uploaded_files:
-        # שימוש בקידוד cp1255 שמתאים לקבצי Netlist ישנים/מקומיים
         content = uploaded_file.getvalue().decode('cp1255', errors='ignore')
         lines = content.splitlines()
         zone = None
@@ -19,25 +18,34 @@ def process_netlist_logic(uploaded_files):
             line = line.strip()
             if not line or line.startswith('%'):
                 continue
+            
             upper_line = line.upper()
-            if "PART" in upper_line or "PACKAGES" in upper_line:
+            
+            # Improved Zone Detection
+            if any(key in upper_line for key in ["PART", "PACKAGES", "$PACKAGES"]):
                 zone = "START"
                 continue
-            elif "NET" in upper_line or "$NETS" in upper_line:
+            elif any(key in upper_line for key in ["NET", "$NETS"]):
                 zone = "END"
                 continue
-            elif upper_line == "$END":
-                zone = None
-                continue
+            elif upper_line == "$END" or upper_line.startswith('$'):
+                if zone == "START" and not upper_line.startswith('$PACK'):
+                    zone = None # Safety exit if a new unknown zone starts
+                if upper_line == "$END":
+                    zone = None
+                    continue
 
+            # Section 1: Extracting Packages (Components)
             if zone == "START":
                 parts = line.split()
                 if len(parts) >= 2:
+                    # Logic to handle different variations of package lines
                     pkg_raw = parts[0].replace('!', '').replace(';', '').replace('.', '_')
                     val = parts[1].replace(';', '')
                     des = parts[-1].replace(';', '')
                     packages.append(f"!{pkg_raw}! {val}; {des}")
 
+            # Section 2: Extracting Nets
             elif zone == "END":
                 clean_line = line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
                 parts = clean_line.split()
@@ -52,6 +60,7 @@ def process_netlist_logic(uploaded_files):
                     if current_net:
                         nets_data[current_net].extend(parts)
 
+        # Final Assembly
         final_output = ["$PACKAGES"]
         final_output.extend(packages)
         final_output.append("$NETS")
@@ -63,17 +72,16 @@ def process_netlist_logic(uploaded_files):
                 final_output.append(f"{net_name}; {' '.join(chunk)}")
         final_output.append("$End")
         all_results.append("\n".join(final_output))
+        
     return "\n\n".join(all_results)
 
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
-# קישור ללוגו
 logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.devcontainer/MindBoard-Logo.jpg"
 
 st.markdown(f"""
     <style>
-    /* רקע האפליקציה והלוגו */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -96,23 +104,23 @@ st.markdown(f"""
         padding-bottom: 50px; 
         font-size: 3.5em !important; 
         font-weight: 900 !important; 
-        color: #002366; 
+        color: #000000; /* Title changed to Black */
     }}
 
-    /* שינוי עיצוב הכותרת של SET OUTPUT FILENAME */
+    /* FIXED: SET OUTPUT FILENAME - Black, Bold, Large */
     [data-testid="stTextInput"] label {{
-        font-size: 1.5rem !important; /* הגדלת הטקסט */
-        font-weight: 900 !important; /* הבלטה חזקה */
-        color: #002366 !important; /* צבע כחול מותגי */
+        font-size: 1.6rem !important; 
+        font-weight: 900 !important; 
+        color: #000000 !important; /* Changed to Black */
         text-transform: uppercase;
-        margin-bottom: 10px !important;
+        margin-bottom: 12px !important;
+        letter-spacing: 1px;
     }}
 
-    /* שקיפות מלאה לתיבת התצוגה המקדימה */
     .stTextArea textarea {{
         background-color: rgba(0, 0, 0, 0) !important; 
         backdrop-filter: none !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border: 2px solid rgba(0, 0, 0, 0.2) !important;
         border-radius: 10px;
         color: #000000 !important;
         font-family: 'Courier New', monospace;
@@ -144,7 +152,6 @@ if uploaded_files:
         original_name = uploaded_files[0].name.rsplit('.', 1)[0]
         default_output_name = f"{original_name}_transformed"
         
-        # הטקסט כאן יושפע מה-CSS שהוספנו למעלה
         custom_name = st.text_input("SET OUTPUT FILENAME:", value=default_output_name)
         full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
         
