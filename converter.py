@@ -71,17 +71,17 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
-    /* Background configuration - Logo positioned on the upload box */
+    /* Background configuration - Logo moved significantly lower */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
         background-attachment: fixed;
-        /* UPDATE: Lowered from 23% to 28% to align logo lines with upload area */
-        background-position: center 28%; 
+        /* Positioned significantly lower (40%) to align upper lines with upload box */
+        background-position: center 40%; 
         background-size: 65%; 
     }}
     
-    /* Watermark overlay - Increased transparency */
+    /* Watermark overlay */
     .stApp::before {{
         content: "";
         position: fixed;
@@ -90,13 +90,12 @@ st.markdown(f"""
         z-index: -1;
     }}
 
-    /* Prominent bold header styling */
+    /* Title styling */
     .centered-title {{
         text-align: center;
         width: 100%;
         padding-top: 5px;
-        /* UPDATE: Increased from 25px to 50px for clearer separation between title and logo */
-        padding-bottom: 50px; 
+        padding-bottom: 60px; 
         font-size: 4em !important; 
         font-weight: 900 !important; 
         color: #002366; 
@@ -104,15 +103,15 @@ st.markdown(f"""
         margin-left: -3% !important;
     }}
     
-    /* Ensure UI components sit above the background layer */
+    /* Ensure UI components sit above background */
     .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
         position: relative;
         z-index: 10;
     }}
 
-    /* Vertical alignment for the uploader component */
+    /* Uploader vertical spacing */
     [data-testid="stFileUploader"] {{
-        margin-top: 40px;
+        margin-top: 50px;
     }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
