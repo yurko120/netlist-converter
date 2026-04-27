@@ -67,11 +67,12 @@ def process_netlist_logic(uploaded_files):
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
+# Fixed Image URL
 logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.devcontainer/MindBoard-Logo.jpg"
 
 st.markdown(f"""
     <style>
-    /* Background and Logo */
+    /* Background with Logo */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -80,50 +81,38 @@ st.markdown(f"""
         background-size: 45%; 
     }}
     
+    /* Global transparency layer */
     .stApp::before {{
         content: "";
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(255, 255, 255, 0.92); 
+        background-color: rgba(255, 255, 255, 0.90); 
         z-index: -1;
     }}
 
     .centered-title {{
         text-align: center;
         padding-top: 20px;
-        padding-bottom: 80px; 
-        font-size: 4em !important; 
+        padding-bottom: 50px; 
+        font-size: 3.5em !important; 
         font-weight: 900 !important; 
         color: #002366; 
     }}
 
-    /* PREVIEW BOX: Increased transparency by 80% */
+    /* THE ULTRA-TRANSPARENT PREVIEW BOX */
     .stTextArea textarea {{
-        background-color: rgba(255, 255, 255, 0.02) !important; /* Extremely transparent */
-        backdrop-filter: blur(4px); /* Reduced blur to keep background sharp */
+        background-color: rgba(255, 255, 255, 0.01) !important; /* Almost 100% transparent */
+        backdrop-filter: blur(1px) !important; /* Very low blur to keep logo clear */
         border: 1px solid rgba(0, 0, 0, 0.05);
-        border-radius: 12px;
+        border-radius: 10px;
         color: #000000 !important;
         font-family: 'Courier New', monospace;
-        font-weight: 800 !important; /* Bold for readability on transparent background */
-        font-size: 1.15em !important;
-        line-height: 1.6;
-        padding: 25px;
+        font-weight: 800 !important; /* High contrast bold text */
+        font-size: 1.2em !important;
+        padding: 20px;
     }}
 
-    /* Buttons */
-    div.stButton > button {{
-        transition: all 0.3s ease;
-        border-radius: 8px;
-        background-color: #002366;
-        color: white;
-    }}
-    
-    div.stButton > button:hover {{
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }}
-
+    /* Layout Elements */
     .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
         position: relative;
         z-index: 10;
