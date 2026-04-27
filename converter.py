@@ -5,11 +5,9 @@ import datetime
 # --- CORE LOGIC ---
 def process_netlist_logic(uploaded_files):
     all_results = []
-    
     for uploaded_file in uploaded_files:
         content = uploaded_file.getvalue().decode('cp1255', errors='ignore')
         lines = content.splitlines()
-
         zone = None
         packages = []
         nets_data = {}
@@ -20,9 +18,7 @@ def process_netlist_logic(uploaded_files):
             line = line.strip()
             if not line or line.startswith('%'):
                 continue
-            
             upper_line = line.upper()
-            
             if "PART" in upper_line or "PACKAGES" in upper_line:
                 zone = "START"
                 continue
@@ -46,7 +42,6 @@ def process_netlist_logic(uploaded_files):
                 parts = clean_line.split()
                 if not parts:
                     continue
-
                 if not raw_line.startswith((' ', '\t', '*')):
                     current_net = parts[0]
                     if current_net not in nets_data:
@@ -59,69 +54,58 @@ def process_netlist_logic(uploaded_files):
         final_output = ["$PACKAGES"]
         final_output.extend(packages)
         final_output.append("$NETS")
-        
         for net_name, pins in nets_data.items():
             actual_pins = [p.strip() for p in pins if p.strip() and p.strip() != ';']
-            if not actual_pins:
-                continue
+            if not actual_pins: continue
             for i in range(0, len(actual_pins), 10):
                 chunk = actual_pins[i:i+10]
                 final_output.append(f"{net_name}; {' '.join(chunk)}")
-        
         final_output.append("$End")
         all_results.append("\n".join(final_output))
-
     return "\n\n".join(all_results)
 
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
-# Centering the Welcome Header using CSS
-st.markdown("""
+# Replace this string with the actual link you copied from the "Raw" button
+logo_url = "PASTE_THE_RAW_LINK_HERE"
+
+st.markdown(f"""
     <style>
-    .centered-title {
+    .stApp {{
+        background-image: url("{https://github.com/yurko120/netlist-converter/blob/main/.devcontainer/MindBoard-Logo.jpg}");
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-position: center;
+        background-size: 40%;
+        opacity: 0.08; /* This makes it a subtle watermark */
+    }}
+    .centered-title {{
         text-align: center;
         width: 100%;
         padding-top: 20px;
-        padding-bottom: 20px;
-    }
+        padding-bottom: 30px;
+    }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
     """, unsafe_allow_html=True)
 
-# Create two columns
 col1, col2 = st.columns([1, 1])
-
 with col1:
     st.markdown("### **Upload .NET files**")
     uploaded_files = st.file_uploader("", accept_multiple_files=True, label_visibility="collapsed")
 
 if uploaded_files:
     result_text = process_netlist_logic(uploaded_files)
-    
     with col2:
         st.subheader("File Settings")
-        
-        # Smart Default Filename: Original Name + Today's Date
         today = datetime.date.today().strftime("%d_%m_%Y")
         original_name = uploaded_files[0].name.rsplit('.', 1)[0]
         default_output_name = f"{original_name}_{today}"
-        
-        # User input for filename
         custom_name = st.text_input("Set output filename:", value=default_output_name)
-        
-        # Dynamic update of the extension
         full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
-        
-        st.download_button(
-            label=f"📥 Download {full_filename}",
-            data=result_text,
-            file_name=full_filename,
-            mime="text/plain",
-            use_container_width=True
-        )
+        st.download_button(label=f"📥 Download {full_filename}", data=result_text, file_name=full_filename, mime="text/plain", use_container_width=True)
 
-    # Full Preview Section with scrolling
     st.divider()
     st.subheader("🔍 Full File Preview")
     st.text_area("Final netlist structure:", value=result_text, height=600)
