@@ -76,14 +76,23 @@ def process_netlist_logic(uploaded_files):
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
-# Big Welcome Header
-st.title("Welcome to Mind-Board Converter")
+# Centering the Welcome Header using CSS
+st.markdown("""
+    <style>
+    .centered-title {
+        text-align: center;
+        width: 100%;
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+    </style>
+    <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
+    """, unsafe_allow_html=True)
 
-# Create two columns for organized layout
+# Create two columns
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    # Bold and larger label for uploader
     st.markdown("### **Upload .NET files**")
     uploaded_files = st.file_uploader("", accept_multiple_files=True, label_visibility="collapsed")
 
@@ -92,12 +101,16 @@ if uploaded_files:
     
     with col2:
         st.subheader("File Settings")
-        # Filename input
-        today = datetime.date.today().strftime("%Y-%m-%d")
-        default_name = f"Allegro_Export_{today}"
-        custom_name = st.text_input("Set output filename:", value=default_name)
         
-        # Ensure correct extension
+        # Smart Default Filename: Original Name + Today's Date
+        today = datetime.date.today().strftime("%d_%m_%Y")
+        original_name = uploaded_files[0].name.rsplit('.', 1)[0]
+        default_output_name = f"{original_name}_{today}"
+        
+        # User input for filename
+        custom_name = st.text_input("Set output filename:", value=default_output_name)
+        
+        # Dynamic update of the extension
         full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
         
         st.download_button(
@@ -111,5 +124,4 @@ if uploaded_files:
     # Full Preview Section with scrolling
     st.divider()
     st.subheader("🔍 Full File Preview")
-    # Displaying the entire result_text allows full scrolling
     st.text_area("Final netlist structure:", value=result_text, height=600)
