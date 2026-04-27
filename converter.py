@@ -1,6 +1,7 @@
 import streamlit as st
 import io
 import datetime
+import re
 
 # --- CORE LOGIC ---
 def process_netlist_logic(uploaded_files):
@@ -21,7 +22,7 @@ def process_netlist_logic(uploaded_files):
             
             upper_line = line.upper()
             
-            # 1. Flexible Zone Detection (Fixes files that weren't recognized)
+            # Universal zone detection for various netlist formats
             if any(k in upper_line for k in ["$PACKAGES", "PACKAGES", "PART"]):
                 zone = "START"
                 continue
@@ -32,27 +33,29 @@ def process_netlist_logic(uploaded_files):
                 zone = None
                 continue
 
-            # 2. Extracting Packages with ";" Fix
+            # Section 1: Extracting Packages (Components)
             if zone == "START":
-                # Clean existing delimiters to prevent double ";"
-                clean_line = line.replace('!', '').replace(';', ' ')
+                # Clean line from existing delimiters to rebuild it correctly
+                clean_line = line.replace('!', ' ').replace(';', ' ')
                 parts = clean_line.split()
                 if len(parts) >= 2:
                     pkg_id = parts[0]
                     val = parts[1]
                     des = parts[-1]
-                    # Create clean structure: !Package! Value; Designator
+                    # Format: !Package! Value; Designator
                     packages.append(f"!{pkg_id}! {val}; {des}")
 
-            # 3. Extracting Nets with Pin Dash-to-Dot Fix
+            # Section 2: Extracting Nets with Pin Dash-to-Dot Fix
             elif zone == "END":
-                processed_line = line.replace('-', '.') # U46-C22 -> U46.C22
+                # Replace '-' with '.' for pin numbers (e.g., U46-C22 -> U46.C22)
+                processed_line = line.replace('-', '.')
                 clean_line = processed_line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
                 parts = clean_line.split()
                 
                 if not parts:
                     continue
                 
+                # Check if it's a new net name (starts at column 1)
                 if not raw_line.startswith((' ', '\t', '*')):
                     current_net = parts[0]
                     if current_net not in nets_data:
@@ -62,13 +65,15 @@ def process_netlist_logic(uploaded_files):
                     if current_net:
                         nets_data[current_net].extend(parts)
 
-        # Final Formatting
+        # Final Assembly
         final_output = ["$PACKAGES"]
         final_output.extend(packages)
         final_output.append("$NETS")
         for net_name, pins in nets_data.items():
             actual_pins = [p.strip() for p in pins if p.strip() and p.strip() != ';']
             if not actual_pins: continue
+            
+            # Chunk pins into groups of 10 for standard netlist readability
             for i in range(0, len(actual_pins), 10):
                 chunk = actual_pins[i:i+10]
                 final_output.append(f"{net_name}; {' '.join(chunk)}")
@@ -85,6 +90,7 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
+    /* App Background & Logo Overlay */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -103,30 +109,39 @@ st.markdown(f"""
 
     .centered-title {{
         text-align: center;
-        padding-top: 20px;
-        padding-bottom: 50px; 
+        color: #000000;
         font-size: 3.5em !important; 
         font-weight: 900 !important; 
-        color: #000000;
+        padding-top: 20px;
+        padding-bottom: 50px;
     }}
 
-    /* UI: SET OUTPUT FILENAME - Black, Bold, Large */
+    /* UI: SET OUTPUT FILENAME - Solid Black & Bold */
     [data-testid="stTextInput"] label {{
         font-size: 1.6rem !important; 
         font-weight: 900 !important; 
         color: #000000 !important;
         text-transform: uppercase;
         margin-bottom: 12px !important;
+        letter-spacing: 1px;
     }}
 
+    /* Preview Area Styling */
     .stTextArea textarea {{
-        background-color: rgba(255, 255, 255, 0.5) !important; 
+        background-color: rgba(255, 255, 255, 0.6) !important; 
         border: 2px solid #000000 !important;
         border-radius: 10px;
         color: #000000 !important;
         font-family: 'Courier New', monospace;
         font-weight: 800 !important; 
         font-size: 1.25em !important;
+        padding: 20px;
+    }}
+
+    /* Ensuring UI elements stay above the background overlay */
+    .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
+        position: relative;
+        z-index: 10;
     }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
@@ -135,19 +150,18 @@ st.markdown(f"""
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    st.markdown("### **Upload .NET files**")
-    uploaded_files = st.file_uploader("", accept_multiple_files=True, label_visibility="collapsed")
+    st.markdown("### **Upload Source Files**")
+    uploaded_files = st.file_uploader("Upload .NET files", accept_multiple_files=True, label_visibility="collapsed")
 
 if uploaded_files:
     result_text = process_netlist_logic(uploaded_files)
     
     with col2:
         st.subheader("File Settings")
-        today = datetime.date.today().strftime("%d_%m_%Y")
         original_name = uploaded_files[0].name.rsplit('.', 1)[0]
-        default_output_name = f"{original_name}_transformed"
         
-        custom_name = st.text_input("SET OUTPUT FILENAME:", value=default_output_name)
+        # High-visibility filename input
+        custom_name = st.text_input("SET OUTPUT FILENAME:", value=f"{original_name}_transformed")
         full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
         
         st.download_button(
@@ -159,5 +173,5 @@ if uploaded_files:
         )
 
     st.divider()
-    st.subheader("🔍 Full File Preview")
+    st.subheader("🔍 Technical Preview")
     st.text_area("Final netlist structure:", value=result_text, height=600)
