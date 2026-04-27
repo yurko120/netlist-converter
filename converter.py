@@ -111,10 +111,9 @@ st.markdown(f"""
     }}
 
     [data-testid="stTextInput"] label {{
-        font-size: 1.6rem !important; 
-        font-weight: 900 !important; 
+        font-size: 1.1rem !important; 
+        font-weight: 700 !important; 
         color: #000000 !important;
-        text-transform: uppercase;
     }}
 
     .stTextArea textarea {{
@@ -133,42 +132,52 @@ st.markdown(f"""
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    st.markdown("### **Upload Source Files**")
+    st.markdown("### **1. Upload Source Files**")
     uploaded_files = st.file_uploader("Upload .NET files", accept_multiple_files=True, label_visibility="collapsed")
 
 if uploaded_files:
-    processed_results = []
-    for f in uploaded_files:
-        processed_results.append({
-            "name": f.name,
-            "content": process_single_file(f)
-        })
+    processed_files_data = []
     
     with col2:
-        st.subheader("Download Center")
-        # For simplicity in naming, we use the first file's name as a base if downloading a combined blob, 
-        # but usually, users want to check them one by one.
-        for idx, res in enumerate(processed_results):
-            original_name = res["name"].rsplit('.', 1)[0]
+        st.markdown("### **2. File Settings & Download**")
+        for idx, f in enumerate(uploaded_files):
+            # Create an individual naming field for each file
+            original_name = f.name.rsplit('.', 1)[0]
+            custom_name = st.text_input(f"Name for file {idx+1} ({f.name}):", 
+                                        value=f"{original_name}_transformed", 
+                                        key=f"name_{idx}")
+            
+            # Process the file
+            content = process_single_file(f)
+            
+            # Add to list for the Preview tabs
+            processed_files_data.append({
+                "display_name": custom_name,
+                "content": content
+            })
+            
+            # Download button for this specific file
+            full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
             st.download_button(
-                label=f"📥 Download {original_name}_transformed.txt",
-                data=res["content"],
-                file_name=f"{original_name}_transformed.txt",
+                label=f"📥 Download {full_filename}",
+                data=content,
+                file_name=full_filename,
                 mime="text/plain",
                 key=f"dl_{idx}",
                 use_container_width=True
             )
+            st.write("---") # Visual separator between files
 
     st.divider()
     st.subheader("🔍 Technical Preview (Per File)")
     
-    # Create Tabs for each file
-    tab_titles = [res["name"] for res in processed_results]
+    # Create Tabs based on the custom names provided
+    tab_titles = [item["display_name"] for item in processed_files_data]
     tabs = st.tabs(tab_titles)
     
     for idx, tab in enumerate(tabs):
         with tab:
-            st.text_area(f"Preview for {processed_results[idx]['name']}:", 
-                         value=processed_results[idx]['content'], 
+            st.text_area(f"Preview for: {processed_files_data[idx]['display_name']}", 
+                         value=processed_files_data[idx]['content'], 
                          height=500, 
                          key=f"text_{idx}")
