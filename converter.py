@@ -71,7 +71,7 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
-    /* Background configuration - Logo resized to 45% (30% smaller than previous) */
+    /* Background and Logo Positioning */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -80,37 +80,72 @@ st.markdown(f"""
         background-size: 45%; 
     }}
     
-    /* Watermark overlay */
+    /* Overlay for Content Readability */
     .stApp::before {{
         content: "";
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(255, 255, 255, 0.96); 
+        background-color: rgba(255, 255, 255, 0.94); 
         z-index: -1;
     }}
 
-    /* Title styling */
+    /* Title with Animation */
     .centered-title {{
         text-align: center;
-        width: 100%;
-        padding-top: 5px;
-        padding-bottom: 150px; 
+        padding-top: 20px;
+        padding-bottom: 120px; 
         font-size: 4em !important; 
         font-weight: 900 !important; 
         color: #002366; 
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        margin-left: -3% !important;
+        animation: fadeIn 1.5s ease-in;
     }}
     
-    /* UI components above background */
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(-20px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+
+    /* Glassmorphism Effect for Preview Box */
+    .stTextArea textarea {{
+        background-color: rgba(255, 255, 255, 0.4) !important;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 15px;
+        color: #000;
+        font-family: 'Courier New', monospace;
+        padding: 15px;
+    }}
+
+    /* Interactive Button Styling */
+    div.stButton > button {{
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        background-color: #002366;
+        color: white;
+        border: none;
+    }}
+    
+    div.stButton > button:hover {{
+        transform: scale(1.02);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        background-color: #003aab;
+    }}
+
+    /* Scrollbar Customization */
+    ::-webkit-scrollbar {{
+        width: 8px;
+    }}
+    ::-webkit-scrollbar-track {{
+        background: rgba(0,0,0,0.05);
+    }}
+    ::-webkit-scrollbar-thumb {{
+        background: #002366;
+        border-radius: 10px;
+    }}
+
     .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
         position: relative;
         z-index: 10;
-    }}
-
-    /* Vertical spacing adjustment for the uploader */
-    [data-testid="stFileUploader"] {{
-        margin-top: 50px;
     }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
