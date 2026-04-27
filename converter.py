@@ -35,13 +35,13 @@ def process_netlist_logic(uploaded_files):
 
             # 2. Extracting Packages
             if zone == "START":
-                # Clean line but keep track of parts
+                # Clean line to identify parts
                 temp_line = line.replace('!', ' ').replace(';', ' ')
                 parts = temp_line.split()
                 
                 if len(parts) >= 2:
-                    # pkg_id (Footprint) - REMOVING DOTS as requested
-                    pkg_id = parts[0].replace('.', '')
+                    # pkg_id (Footprint) - REPLACING DOTS WITH UNDERSCORE
+                    pkg_id = parts[0].replace('.', '_')
                     # des (Designator) - usually the last part
                     des = parts[-1]
                     
