@@ -22,40 +22,40 @@ def process_netlist_logic(uploaded_files):
                 
             upper_line = line.upper()
             
-            # 1. Flexible Zone Detection (Handles %PART, $PACKAGES, etc.)
+            # 1. Zone Detection
             if any(k in upper_line for k in ["PART", "PACKAGES", "$PACKAGES"]):
                 zone = "START"
                 continue
             elif any(k in upper_line for k in ["$NETS", "NET"]):
                 zone = "END"
                 continue
-            elif upper_line.startswith('$') and not any(k in upper_line for k in ["PACK", "NET"]):
+            elif upper_line.startswith('$'):
                 zone = None
                 continue
 
-            if line.startswith('%') and zone is None:
-                continue
-
-            # 2. Extracting Packages - Fixed Column Assignment
+            # 2. Extracting Packages
             if zone == "START":
-                clean_line = line.replace('!', ' ').replace(';', ' ')
-                parts = clean_line.split()
+                # Clean line but keep track of parts
+                temp_line = line.replace('!', ' ').replace(';', ' ')
+                parts = temp_line.split()
                 
                 if len(parts) >= 2:
-                    # Based on your example: "AMP-796136-1 B1"
-                    # parts[0] is the Footprint/Package (AMP-796136-1)
-                    # parts[1] is the Designator (B1)
-                    pkg_id = parts[0]
-                    des = parts[1]
+                    # pkg_id (Footprint) - REMOVING DOTS as requested
+                    pkg_id = parts[0].replace('.', '')
+                    # des (Designator) - usually the last part
+                    des = parts[-1]
                     
-                    # We set the Value to be the same as Package to avoid shifting names
-                    val = pkg_id 
-                    
-                    # Result: !AMP-796136-1! AMP-796136-1; B1
-                    packages.append(f"!{pkg_id}! {val}; {des}")
+                    # Check if there is a 3rd column for Value
+                    if len(parts) > 2:
+                        val = parts[1]
+                        packages.append(f"!{pkg_id}! {val}; {des}")
+                    else:
+                        # Empty value column, keeping the ";" and spaces
+                        packages.append(f"!{pkg_id}! ; {des}")
 
             # 3. Extracting Nets with Pin Dash-to-Dot Fix
             elif zone == "END":
+                # Convert dash to dot for pins (e.g., U46-C22 -> U46.C22)
                 processed_line = line.replace('-', '.')
                 clean_line = processed_line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
                 parts = clean_line.split()
