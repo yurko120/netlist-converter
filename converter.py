@@ -2,7 +2,7 @@ import streamlit as st
 import io
 
 def process_netlist_logic(uploaded_files):
-    final_output = []
+    all_results = []
     
     for uploaded_file in uploaded_files:
         content = uploaded_file.getvalue().decode('cp1255', errors='ignore')
@@ -15,8 +15,6 @@ def process_netlist_logic(uploaded_files):
 
         for line in lines:
             upper_line = line.upper()
-            
-            # Zone detection
             if "PART" in upper_line or "PACKAGES" in upper_line:
                 zone = "START"
                 continue
@@ -27,7 +25,6 @@ def process_netlist_logic(uploaded_files):
             if not line or line.startswith('%') or line.upper() == "$END":
                 continue
 
-            # --- PACKAGES ZONE ---
             if zone == "START":
                 parts = [p for p in line.split(' ') if p]
                 if len(parts) >= 2:
@@ -41,11 +38,8 @@ def process_netlist_logic(uploaded_files):
                         des = parts[1].replace(';', '')
                         packages.append(f"{pkg_str}; {des}")
 
-            # --- NETS ZONE ---
             elif zone == "END":
-                # Cleaning line from legacy semicolons and commas
                 clean_line = line.replace(',', ' ').replace(';', ' ')
-                
                 if line.startswith('*'):
                     if current_net:
                         new_pins = clean_line[1:].strip().split()
@@ -60,39 +54,42 @@ def process_netlist_logic(uploaded_files):
                         new_pins = parts[1:]
                         nets_data[current_net].extend(new_pins)
 
-        # --- FINAL ASSEMBLY ---
-        final_output.append("$PACKAGES")
+        # Final Assembly for this file
+        final_output = ["$PACKAGES"]
         final_output.extend(packages)
         final_output.append("$NETS")
-        
         for net_name, pins in nets_data.items():
-            # Remove any empty strings from pin list
             actual_pins = [p for p in pins if p.strip()]
-            if not actual_pins:
-                continue
-            
-            # MANDATORY RULE OF 10: Every line starts with NetName;
             for i in range(0, len(actual_pins), 10):
                 chunk = actual_pins[i:i+10]
-                # THIS IS THE KEY: Every line is built as [NetName]; [Pins]
                 final_output.append(f"{net_name}; {' '.join(chunk)}")
-        
         final_output.append("$End")
+        
+        all_results.append("\n".join(final_output))
 
-    return "\n".join(final_output)
+    return "\n\n".join(all_results)
 
-# Streamlit Interface
-st.set_page_config(page_title="Netlist Converter", page_icon="⚡")
-st.title("⚡ Altium to Allegro Netlist Converter")
-st.write("Mandatory Rule: Every line starts with Net Name (Max 10 pins per line).")
+# --- Streamlit UI ---
+st.set_page_config(page_title="Netlist Converter", page_icon="⚡", layout="wide")
 
-uploaded_files = st.file_uploader("Upload NET files", accept_multiple_files=True)
+st.title("⚡ Netlist Converter with Preview")
+st.write("Upload your files and verify the format before downloading.")
+
+uploaded_files = st.file_uploader("Choose .NET files", accept_multiple_files=True)
 
 if uploaded_files:
     result_text = process_netlist_logic(uploaded_files)
-    st.success(f"Successfully processed {len(uploaded_files)} file(s)!")
+    
+    st.success("Files processed successfully!")
+    
+    # --- PREVIEW SECTION ---
+    st.subheader("🔍 Live Preview (First 50 lines)")
+    preview_lines = result_text.splitlines()[:50]
+    st.text_area("Check the format below:", value="\n".join(preview_lines), height=300)
+    
+    # --- DOWNLOAD SECTION ---
     st.download_button(
-        label="📥 Download Converted Netlist",
+        label="📥 Download Full Converted Netlist",
         data=result_text,
         file_name="converted_netlist.txt",
         mime="text/plain"
