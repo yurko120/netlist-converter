@@ -67,19 +67,27 @@ def process_netlist_logic(uploaded_files):
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
-# Replace this string with the actual link you copied from the "Raw" button
-logo_url = "PASTE_THE_RAW_LINK_HERE"
+# הכתובת המתוקנת לקובץ הגולמי ב-GitHub
+logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.devcontainer/MindBoard-Logo.jpg"
 
 st.markdown(f"""
     <style>
     .stApp {{
-        background-image: url("{https://github.com/yurko120/netlist-converter/blob/main/.devcontainer/MindBoard-Logo.jpg}");
+        background-image: url("{logo_url}");
         background-repeat: no-repeat;
         background-attachment: fixed;
         background-position: center;
         background-size: 40%;
-        opacity: 0.08; /* This makes it a subtle watermark */
     }}
+    
+    .stApp::before {{
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(255, 255, 255, 0.92); /* שכבת הבהרה כדי שהלוגו יהיה עדין */
+        z-index: -1;
+    }}
+
     .centered-title {{
         text-align: center;
         width: 100%;
