@@ -6,6 +6,7 @@ import datetime
 def process_netlist_logic(uploaded_files):
     all_results = []
     for uploaded_file in uploaded_files:
+        # שימוש בקידוד cp1255 שמתאים לקבצי Netlist ישנים/מקומיים
         content = uploaded_file.getvalue().decode('cp1255', errors='ignore')
         lines = content.splitlines()
         zone = None
@@ -67,12 +68,12 @@ def process_netlist_logic(uploaded_files):
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
-# Fixed URL variable
+# קישור ללוגו
 logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.devcontainer/MindBoard-Logo.jpg"
 
 st.markdown(f"""
     <style>
-    /* Fixed the background-image syntax error */
+    /* רקע האפליקציה והלוגו */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -98,7 +99,16 @@ st.markdown(f"""
         color: #002366; 
     }}
 
-    /* 100% Transparency for the preview box */
+    /* שינוי עיצוב הכותרת של SET OUTPUT FILENAME */
+    [data-testid="stTextInput"] label {{
+        font-size: 1.5rem !important; /* הגדלת הטקסט */
+        font-weight: 900 !important; /* הבלטה חזקה */
+        color: #002366 !important; /* צבע כחול מותגי */
+        text-transform: uppercase;
+        margin-bottom: 10px !important;
+    }}
+
+    /* שקיפות מלאה לתיבת התצוגה המקדימה */
     .stTextArea textarea {{
         background-color: rgba(0, 0, 0, 0) !important; 
         backdrop-filter: none !important;
@@ -134,7 +144,8 @@ if uploaded_files:
         original_name = uploaded_files[0].name.rsplit('.', 1)[0]
         default_output_name = f"{original_name}_transformed"
         
-        custom_name = st.text_input("Set output filename:", value=default_output_name)
+        # הטקסט כאן יושפע מה-CSS שהוספנו למעלה
+        custom_name = st.text_input("SET OUTPUT FILENAME:", value=default_output_name)
         full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
         
         st.download_button(
