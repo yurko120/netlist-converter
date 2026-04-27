@@ -22,32 +22,36 @@ def process_netlist_logic(uploaded_files):
             
             upper_line = line.upper()
             
-            # Universal zone detection for various netlist formats
+            # 1. Flexible Zone Detection
             if any(k in upper_line for k in ["$PACKAGES", "PACKAGES", "PART"]):
                 zone = "START"
                 continue
             elif any(k in upper_line for k in ["$NETS", "NET"]):
                 zone = "END"
                 continue
-            elif upper_line.startswith('$') and not any(k in upper_line for k in ["PACK", "NET"]):
+            elif upper_line.startswith('$'):
                 zone = None
                 continue
 
-            # Section 1: Extracting Packages (Components)
+            # 2. Extracting Packages - Heavy Duty Extraction
             if zone == "START":
-                # Clean line from existing delimiters to rebuild it correctly
+                # Remove all special characters to isolate text
                 clean_line = line.replace('!', ' ').replace(';', ' ')
+                # Split by any whitespace (handles tabs/multiple spaces)
                 parts = clean_line.split()
+                
                 if len(parts) >= 2:
                     pkg_id = parts[0]
                     val = parts[1]
                     des = parts[-1]
-                    # Format: !Package! Value; Designator
                     packages.append(f"!{pkg_id}! {val}; {des}")
+                elif len(parts) == 1:
+                    # Fallback for lines with only one identifier
+                    packages.append(f"!{parts[0]}! Unknown; {parts[0]}")
 
-            # Section 2: Extracting Nets with Pin Dash-to-Dot Fix
+            # 3. Extracting Nets with Pin Dash-to-Dot Fix
             elif zone == "END":
-                # Replace '-' with '.' for pin numbers (e.g., U46-C22 -> U46.C22)
+                # U46-C22 -> U46.C22
                 processed_line = line.replace('-', '.')
                 clean_line = processed_line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
                 parts = clean_line.split()
@@ -55,7 +59,7 @@ def process_netlist_logic(uploaded_files):
                 if not parts:
                     continue
                 
-                # Check if it's a new net name (starts at column 1)
+                # New Net detection (starts at first column)
                 if not raw_line.startswith((' ', '\t', '*')):
                     current_net = parts[0]
                     if current_net not in nets_data:
@@ -73,7 +77,6 @@ def process_netlist_logic(uploaded_files):
             actual_pins = [p.strip() for p in pins if p.strip() and p.strip() != ';']
             if not actual_pins: continue
             
-            # Chunk pins into groups of 10 for standard netlist readability
             for i in range(0, len(actual_pins), 10):
                 chunk = actual_pins[i:i+10]
                 final_output.append(f"{net_name}; {' '.join(chunk)}")
@@ -90,7 +93,6 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
-    /* App Background & Logo Overlay */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -116,17 +118,14 @@ st.markdown(f"""
         padding-bottom: 50px;
     }}
 
-    /* UI: SET OUTPUT FILENAME - Solid Black & Bold */
     [data-testid="stTextInput"] label {{
         font-size: 1.6rem !important; 
         font-weight: 900 !important; 
         color: #000000 !important;
         text-transform: uppercase;
         margin-bottom: 12px !important;
-        letter-spacing: 1px;
     }}
 
-    /* Preview Area Styling */
     .stTextArea textarea {{
         background-color: rgba(255, 255, 255, 0.6) !important; 
         border: 2px solid #000000 !important;
@@ -138,7 +137,6 @@ st.markdown(f"""
         padding: 20px;
     }}
 
-    /* Ensuring UI elements stay above the background overlay */
     .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
         position: relative;
         z-index: 10;
@@ -160,7 +158,6 @@ if uploaded_files:
         st.subheader("File Settings")
         original_name = uploaded_files[0].name.rsplit('.', 1)[0]
         
-        # High-visibility filename input
         custom_name = st.text_input("SET OUTPUT FILENAME:", value=f"{original_name}_transformed")
         full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
         
