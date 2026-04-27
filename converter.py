@@ -85,6 +85,7 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
+    /* Main Background */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -101,35 +102,55 @@ st.markdown(f"""
         z-index: -1;
     }}
 
+    /* Compact Layout Tweak */
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 0rem !important;
+    }}
+
+    [data-testid="column"] {{
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }}
+
+    /* Title Styling */
     .centered-title {{
         text-align: center;
         color: #000000;
-        font-size: 3.5em !important; 
+        font-size: 3em !important; 
         font-weight: 900 !important; 
-        padding-top: 20px;
-        padding-bottom: 50px;
+        margin-bottom: 10px !important;
+        padding-bottom: 0px !important;
     }}
 
+    /* Compact Input & Labels */
     [data-testid="stTextInput"] label {{
-        font-size: 1.1rem !important; 
+        font-size: 1rem !important; 
         font-weight: 700 !important; 
         color: #000000 !important;
+        margin-bottom: 0px !important;
+    }}
+    
+    div[data-testid="stVerticalBlock"] > div {{
+        padding-bottom: 5px !important;
+        margin-bottom: 0px !important;
     }}
 
+    /* Preview Area Styling */
     .stTextArea textarea {{
         background-color: rgba(255, 255, 255, 0.6) !important; 
         border: 2px solid #000000 !important;
-        border-radius: 10px;
+        border-radius: 8px;
         color: #000000 !important;
         font-family: 'Courier New', monospace;
         font-weight: 800 !important; 
-        font-size: 1.1em !important;
+        font-size: 1em !important;
     }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
     """, unsafe_allow_html=True)
 
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns([1, 1], gap="small")
 
 with col1:
     st.markdown("### **1. Upload Source Files**")
@@ -141,22 +162,17 @@ if uploaded_files:
     with col2:
         st.markdown("### **2. File Settings & Download**")
         for idx, f in enumerate(uploaded_files):
-            # Create an individual naming field for each file
+            # Compact display for each file
             original_name = f.name.rsplit('.', 1)[0]
-            custom_name = st.text_input(f"Name for file {idx+1} ({f.name}):", 
+            
+            # Using columns inside to make the name field and download button tighter
+            custom_name = st.text_input(f"New name for: {f.name}", 
                                         value=f"{original_name}_transformed", 
                                         key=f"name_{idx}")
             
-            # Process the file
             content = process_single_file(f)
+            processed_files_data.append({"display_name": custom_name, "content": content})
             
-            # Add to list for the Preview tabs
-            processed_files_data.append({
-                "display_name": custom_name,
-                "content": content
-            })
-            
-            # Download button for this specific file
             full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
             st.download_button(
                 label=f"📥 Download {full_filename}",
@@ -166,18 +182,17 @@ if uploaded_files:
                 key=f"dl_{idx}",
                 use_container_width=True
             )
-            st.write("---") # Visual separator between files
+            st.markdown("<hr style='margin: 5px 0;'>", unsafe_allow_html=True)
 
     st.divider()
     st.subheader("🔍 Technical Preview (Per File)")
     
-    # Create Tabs based on the custom names provided
     tab_titles = [item["display_name"] for item in processed_files_data]
     tabs = st.tabs(tab_titles)
     
     for idx, tab in enumerate(tabs):
         with tab:
-            st.text_area(f"Preview for: {processed_files_data[idx]['display_name']}", 
+            st.text_area(f"Preview: {processed_files_data[idx]['display_name']}", 
                          value=processed_files_data[idx]['content'], 
-                         height=500, 
-                         key=f"text_{idx}")
+                         height=450, 
+                         key
