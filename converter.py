@@ -21,16 +21,14 @@ def process_netlist_logic(uploaded_files):
             
             upper_line = line.upper()
             
-            # Improved Zone Detection
-            if any(key in upper_line for key in ["PART", "PACKAGES", "$PACKAGES"]):
+            # Zone Detection - More robust for various netlist formats
+            if "$PACKAGES" in upper_line or "PACKAGES" in upper_line or "PART" in upper_line:
                 zone = "START"
                 continue
-            elif any(key in upper_line for key in ["NET", "$NETS"]):
+            elif "$NETS" in upper_line or "NET" in upper_line:
                 zone = "END"
                 continue
-            elif upper_line == "$END" or upper_line.startswith('$'):
-                if zone == "START" and not upper_line.startswith('$PACK'):
-                    zone = None # Safety exit if a new unknown zone starts
+            elif upper_line == "$END" or (line.startswith('$') and zone is not None):
                 if upper_line == "$END":
                     zone = None
                     continue
@@ -39,18 +37,23 @@ def process_netlist_logic(uploaded_files):
             if zone == "START":
                 parts = line.split()
                 if len(parts) >= 2:
-                    # Logic to handle different variations of package lines
+                    # Clean up identifiers and format for output
                     pkg_raw = parts[0].replace('!', '').replace(';', '').replace('.', '_')
                     val = parts[1].replace(';', '')
                     des = parts[-1].replace(';', '')
                     packages.append(f"!{pkg_raw}! {val}; {des}")
 
-            # Section 2: Extracting Nets
+            # Section 2: Extracting Nets with Pin Format Fix
             elif zone == "END":
-                clean_line = line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
+                # Convert pin dash to dot (e.g., U46-C22 -> U46.C22)
+                processed_line = line.replace('-', '.')
+                clean_line = processed_line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
                 parts = clean_line.split()
+                
                 if not parts:
                     continue
+                
+                # Check if it's a new net name (usually starts at column 1)
                 if not raw_line.startswith((' ', '\t', '*')):
                     current_net = parts[0]
                     if current_net not in nets_data:
@@ -60,16 +63,20 @@ def process_netlist_logic(uploaded_files):
                     if current_net:
                         nets_data[current_net].extend(parts)
 
-        # Final Assembly
+        # Build final formatted output
         final_output = ["$PACKAGES"]
         final_output.extend(packages)
         final_output.append("$NETS")
         for net_name, pins in nets_data.items():
+            # Filter out empty pins and semicolons
             actual_pins = [p.strip() for p in pins if p.strip() and p.strip() != ';']
             if not actual_pins: continue
+            
+            # Chunk pins into groups of 10 for readability
             for i in range(0, len(actual_pins), 10):
                 chunk = actual_pins[i:i+10]
                 final_output.append(f"{net_name}; {' '.join(chunk)}")
+        
         final_output.append("$End")
         all_results.append("\n".join(final_output))
         
@@ -104,28 +111,29 @@ st.markdown(f"""
         padding-bottom: 50px; 
         font-size: 3.5em !important; 
         font-weight: 900 !important; 
-        color: #000000; /* Title changed to Black */
+        color: #000000;
     }}
 
-    /* FIXED: SET OUTPUT FILENAME - Black, Bold, Large */
+    /* UI: SET OUTPUT FILENAME - Solid Black & Extra Bold */
     [data-testid="stTextInput"] label {{
         font-size: 1.6rem !important; 
         font-weight: 900 !important; 
-        color: #000000 !important; /* Changed to Black */
+        color: #000000 !important;
         text-transform: uppercase;
         margin-bottom: 12px !important;
         letter-spacing: 1px;
     }}
 
+    /* Preview Area - High Contrast */
     .stTextArea textarea {{
         background-color: rgba(0, 0, 0, 0) !important; 
         backdrop-filter: none !important;
-        border: 2px solid rgba(0, 0, 0, 0.2) !important;
+        border: 2px solid rgba(0, 0, 0, 0.3) !important;
         border-radius: 10px;
         color: #000000 !important;
         font-family: 'Courier New', monospace;
         font-weight: 800 !important; 
-        font-size: 1.2em !important;
+        font-size: 1.25em !important;
         padding: 20px;
     }}
 
@@ -165,4 +173,4 @@ if uploaded_files:
 
     st.divider()
     st.subheader("🔍 Full File Preview")
-    st.text_area("Final netlist structure:", value=result_text, height=500)
+    st.text_area("Final netlist structure:", value=result_text, height=600)
