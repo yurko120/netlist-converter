@@ -1,10 +1,8 @@
 import streamlit as st
 import io
-import datetime
 
 # --- CORE LOGIC ---
 def process_single_file(uploaded_file):
-    """Processes a single file and returns the transformed string."""
     content = uploaded_file.getvalue().decode('cp1255', errors='ignore')
     lines = content.splitlines()
     zone = None
@@ -15,12 +13,9 @@ def process_single_file(uploaded_file):
     for line in lines:
         raw_line = line 
         line = line.strip()
-        if not line:
-            continue
+        if not line: continue
             
         upper_line = line.upper()
-        
-        # 1. Zone Detection
         if any(k in upper_line for k in ["PART", "PACKAGES", "$PACKAGES"]):
             zone = "START"
             continue
@@ -31,29 +26,23 @@ def process_single_file(uploaded_file):
             zone = None
             continue
 
-        # 2. Extracting Packages
         if zone == "START":
             temp_line = line.replace('!', ' ').replace(';', ' ')
             parts = temp_line.split()
-            
             if len(parts) >= 2:
                 pkg_id = parts[0].replace('.', '_')
                 des = parts[-1]
-                
                 if len(parts) > 2:
                     val = parts[1]
                     packages.append(f"!{pkg_id}! {val}; {des}")
                 else:
                     packages.append(f"!{pkg_id}! ; {des}")
 
-        # 3. Extracting Nets
         elif zone == "END":
             processed_line = line.replace('-', '.')
             clean_line = processed_line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
             parts = clean_line.split()
-            
-            if not parts:
-                continue
+            if not parts: continue
             
             if not raw_line.startswith((' ', '\t', '*')):
                 current_net = parts[0]
@@ -91,7 +80,6 @@ st.markdown(f"""
         background-position: center 70%; 
         background-size: 45%; 
     }}
-    
     .stApp::before {{
         content: "";
         position: fixed;
@@ -99,46 +87,41 @@ st.markdown(f"""
         background-color: rgba(255, 255, 255, 0.92); 
         z-index: -1;
     }}
-
-    .block-container {{
-        padding-top: 1.5rem !important;
-        padding-bottom: 0rem !important;
-    }}
-
     .centered-title {{
         text-align: center;
         color: #000000;
         font-size: 2.8em !important; 
         font-weight: 900 !important; 
-        margin-bottom: 5px !important;
+        margin-bottom: 20px !important;
+    }}
+    
+    /* File Card Styling for readability */
+    .file-card {{
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
     }}
 
     [data-testid="stTextInput"] label {{
-        font-size: 0.95rem !important; 
+        font-size: 1rem !important; 
         font-weight: 700 !important; 
         color: #000000 !important;
-        margin-bottom: -10px !important;
+        padding-bottom: 8px !important; /* Space between label and input */
     }}
     
-    /* Tighter vertical spacing */
-    div[data-testid="stVerticalBlock"] > div {{
-        padding-bottom: 2px !important;
-        margin-bottom: 0px !important;
-    }}
-
     .stTextArea textarea {{
         background-color: rgba(255, 255, 255, 0.6) !important; 
         border: 2px solid #000000 !important;
-        border-radius: 8px;
-        color: #000000 !important;
         font-family: 'Courier New', monospace;
         font-weight: 800 !important; 
     }}
     </style>
-    <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
+    <h1 class="centered-title">Mind-Board Converter</h1>
     """, unsafe_allow_html=True)
 
-col1, col2 = st.columns(2) # Removed 'gap' to prevent errors
+col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("### **1. Upload Source Files**")
@@ -150,32 +133,33 @@ if uploaded_files:
     with col2:
         st.markdown("### **2. File Settings & Download**")
         for idx, f in enumerate(uploaded_files):
-            original_name = f.name.rsplit('.', 1)[0]
-            
-            custom_name = st.text_input(f"New name for: {f.name}", 
-                                        value=f"{original_name}_transformed", 
-                                        key=f"name_input_{idx}")
-            
-            content = process_single_file(f)
-            processed_files_data.append({"display_name": custom_name, "content": content})
-            
-            full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
-            st.download_button(
-                label=f"📥 Download {full_filename}",
-                data=content,
-                file_name=full_filename,
-                mime="text/plain",
-                key=f"dl_btn_{idx}",
-                use_container_width=True
-            )
-            st.markdown("<hr style='margin: 8px 0; border: 0; border-top: 1px solid #ccc;'>", unsafe_allow_html=True)
+            # Each file group is wrapped in a container to prevent overlap
+            with st.container():
+                st.markdown(f"**Original File:** `{f.name}`")
+                
+                original_name = f.name.rsplit('.', 1)[0]
+                custom_name = st.text_input("Enter Output Name:", 
+                                            value=f"{original_name}_transformed", 
+                                            key=f"name_input_{idx}")
+                
+                content = process_single_file(f)
+                processed_files_data.append({"display_name": custom_name, "content": content})
+                
+                full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
+                st.download_button(
+                    label=f"📥 Download {full_filename}",
+                    data=content,
+                    file_name=full_filename,
+                    mime="text/plain",
+                    key=f"dl_btn_{idx}",
+                    use_container_width=True
+                )
+                st.markdown("<br>", unsafe_allow_html=True) # Space between file groups
 
     st.divider()
     st.subheader("🔍 Technical Preview (Per File)")
-    
     tab_titles = [item["display_name"] for item in processed_files_data]
     tabs = st.tabs(tab_titles)
-    
     for idx, tab in enumerate(tabs):
         with tab:
             st.text_area(f"Preview: {processed_files_data[idx]['display_name']}", 
