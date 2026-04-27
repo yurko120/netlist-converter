@@ -67,53 +67,79 @@ def process_netlist_logic(uploaded_files):
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
-# הכתובת המתוקנת לקובץ הגולמי ב-GitHub
+# Correct Direct Link for the Logo
 logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.devcontainer/MindBoard-Logo.jpg"
 
 st.markdown(f"""
     <style>
+    /* Fixed background watermark - stays static on scroll */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
-        background-attachment: fixed;
-        background-position: center;
-        background-size: 40%;
+        background-attachment: fixed; /* Crucial: background does not move on scroll */
+        background-position: center 30%; /* Raised up to blend with upload box */
+        background-size: 35%; /* Optimal size */
     }}
     
+    /* Overlay to make it 20% more transparent (approx 0.08 intensity) */
     .stApp::before {{
         content: "";
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(255, 255, 255, 0.92); /* שכבת הבהרה כדי שהלוגו יהיה עדין */
+        background-color: rgba(255, 255, 255, 0.92); /* Higher white opacity for lighter logo */
         z-index: -1;
     }}
 
+    /* Welcome header: Larger and slightly shifted left */
     .centered-title {{
         text-align: center;
         width: 100%;
-        padding-top: 20px;
-        padding-bottom: 30px;
+        padding-top: 10px;
+        padding-bottom: 20px;
+        font-size: 3em !important; /* Larger text */
+        margin-left: -5% !important; /* Shifted left */
+        font-weight: 700;
+        color: #1e1e1e;
+    }}
+    
+    /* Ensure UI elements are above the watermark layer */
+    .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
+        position: relative;
+        z-index: 10;
     }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
     """, unsafe_allow_html=True)
 
+# Main structure
 col1, col2 = st.columns([1, 1])
+
 with col1:
     st.markdown("### **Upload .NET files**")
     uploaded_files = st.file_uploader("", accept_multiple_files=True, label_visibility="collapsed")
 
 if uploaded_files:
     result_text = process_netlist_logic(uploaded_files)
+    
     with col2:
         st.subheader("File Settings")
         today = datetime.date.today().strftime("%d_%m_%Y")
         original_name = uploaded_files[0].name.rsplit('.', 1)[0]
         default_output_name = f"{original_name}_{today}"
+        
         custom_name = st.text_input("Set output filename:", value=default_output_name)
         full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
-        st.download_button(label=f"📥 Download {full_filename}", data=result_text, file_name=full_filename, mime="text/plain", use_container_width=True)
+        
+        st.download_button(
+            label=f"📥 Download {full_filename}",
+            data=result_text,
+            file_name=full_filename,
+            mime="text/plain",
+            use_container_width=True
+        )
 
     st.divider()
+    # The Subheader for Preview
     st.subheader("🔍 Full File Preview")
+    # Displaying the entire result_text allows full scrolling while background stays fixed
     st.text_area("Final netlist structure:", value=result_text, height=600)
