@@ -71,13 +71,13 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
-    /* Background configuration with enlarged logo */
+    /* Background configuration - Logo positioned on the upload box */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
         background-attachment: fixed;
-        /* Positioned to align logo lines with the upload box */
-        background-position: center 23%; 
+        /* UPDATE: Lowered from 23% to 28% to align logo lines with upload area */
+        background-position: center 28%; 
         background-size: 65%; 
     }}
     
@@ -95,7 +95,8 @@ st.markdown(f"""
         text-align: center;
         width: 100%;
         padding-top: 5px;
-        padding-bottom: 25px;
+        /* UPDATE: Increased from 25px to 50px for clearer separation between title and logo */
+        padding-bottom: 50px; 
         font-size: 4em !important; 
         font-weight: 900 !important; 
         color: #002366; 
