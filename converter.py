@@ -67,12 +67,12 @@ def process_netlist_logic(uploaded_files):
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
 
-# Correct way to handle the URL in Python
+# Fixed URL variable
 logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.devcontainer/MindBoard-Logo.jpg"
 
 st.markdown(f"""
     <style>
-    /* Background setup */
+    /* Fixed the background-image syntax error */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -98,21 +98,17 @@ st.markdown(f"""
         color: #002366; 
     }}
 
-    /* THE FIX: TOTAL TRANSPARENCY FOR THE TEXT AREA */
+    /* 100% Transparency for the preview box */
     .stTextArea textarea {{
-        background-color: transparent !important; /* No background color */
-        backdrop-filter: none !important; /* No blur to hide the logo */
-        border: none !important; /* Remove borders */
+        background-color: rgba(0, 0, 0, 0) !important; 
+        backdrop-filter: none !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border-radius: 10px;
         color: #000000 !important;
         font-family: 'Courier New', monospace;
-        font-weight: 800 !important; /* Bold for contrast */
-        font-size: 1.25em !important;
-        padding: 10px;
-    }}
-    
-    /* Ensuring the container of the textarea is also transparent */
-    div[data-baseweb="textarea"] {{
-        background-color: transparent !important;
+        font-weight: 800 !important; 
+        font-size: 1.2em !important;
+        padding: 20px;
     }}
 
     .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
@@ -136,7 +132,7 @@ if uploaded_files:
         st.subheader("File Settings")
         today = datetime.date.today().strftime("%d_%m_%Y")
         original_name = uploaded_files[0].name.rsplit('.', 1)[0]
-        default_output_name = f"{original_name}_{today}"
+        default_output_name = f"{original_name}_transformed"
         
         custom_name = st.text_input("Set output filename:", value=default_output_name)
         full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
@@ -151,4 +147,4 @@ if uploaded_files:
 
     st.divider()
     st.subheader("🔍 Full File Preview")
-    st.text_area("Final netlist structure:", value=result_text, height=600)
+    st.text_area("Final netlist structure:", value=result_text, height=500)
