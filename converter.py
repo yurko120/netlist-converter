@@ -71,7 +71,6 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
-    /* Background and Logo Positioning */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -80,67 +79,47 @@ st.markdown(f"""
         background-size: 45%; 
     }}
     
-    /* Overlay for Content Readability */
     .stApp::before {{
         content: "";
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(255, 255, 255, 0.94); 
+        background-color: rgba(255, 255, 255, 0.92); 
         z-index: -1;
     }}
 
-    /* Title with Animation */
     .centered-title {{
         text-align: center;
         padding-top: 20px;
-        padding-bottom: 120px; 
+        padding-bottom: 80px; 
         font-size: 4em !important; 
         font-weight: 900 !important; 
         color: #002366; 
-        animation: fadeIn 1.5s ease-in;
-    }}
-    
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: translateY(-20px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
     }}
 
-    /* Glassmorphism Effect for Preview Box */
+    /* ULTRA TRANSPARENT BOX WITH BOLD TEXT */
     .stTextArea textarea {{
-        background-color: rgba(255, 255, 255, 0.4) !important;
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 15px;
-        color: #000;
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        color: #000000 !important;
         font-family: 'Courier New', monospace;
-        padding: 15px;
+        font-weight: 800 !important; /* Bold text */
+        font-size: 1.1em !important;
+        line-height: 1.6;
+        padding: 20px;
     }}
 
-    /* Interactive Button Styling */
     div.stButton > button {{
         transition: all 0.3s ease;
-        border-radius: 10px;
+        border-radius: 8px;
         background-color: #002366;
         color: white;
-        border: none;
     }}
     
     div.stButton > button:hover {{
-        transform: scale(1.02);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        background-color: #003aab;
-    }}
-
-    /* Scrollbar Customization */
-    ::-webkit-scrollbar {{
-        width: 8px;
-    }}
-    ::-webkit-scrollbar-track {{
-        background: rgba(0,0,0,0.05);
-    }}
-    ::-webkit-scrollbar-thumb {{
-        background: #002366;
-        border-radius: 10px;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }}
 
     .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
@@ -179,4 +158,4 @@ if uploaded_files:
 
     st.divider()
     st.subheader("🔍 Full File Preview")
-    st.text_area("Final netlist structure:", value=result_text, height=600)
+    st.text_area("Final netlist structure:", value=result_text, height=500)
