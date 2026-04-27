@@ -1,7 +1,6 @@
 import streamlit as st
 import io
 import datetime
-import re
 
 # --- CORE LOGIC ---
 def process_netlist_logic(uploaded_files):
@@ -17,41 +16,47 @@ def process_netlist_logic(uploaded_files):
         for line in lines:
             raw_line = line 
             line = line.strip()
-            if not line or line.startswith('%'):
-                continue
             
+            # Skip empty lines
+            if not line:
+                continue
+                
             upper_line = line.upper()
             
-            # 1. Flexible Zone Detection
-            if any(k in upper_line for k in ["$PACKAGES", "PACKAGES", "PART"]):
+            # 1. Flexible Zone Detection (Handles %PART, $PACKAGES, etc.)
+            if any(k in upper_line for k in ["PART", "PACKAGES", "$PACKAGES"]):
                 zone = "START"
                 continue
             elif any(k in upper_line for k in ["$NETS", "NET"]):
                 zone = "END"
                 continue
-            elif upper_line.startswith('$'):
+            elif upper_line.startswith('$') and not any(k in upper_line for k in ["PACK", "NET"]):
                 zone = None
                 continue
 
-            # 2. Extracting Packages - Heavy Duty Extraction
+            # Skip comments ONLY if they are not part of a known header
+            if line.startswith('%') and zone is None:
+                continue
+
+            # 2. Extracting Packages (Handles 2 or 3 column formats)
             if zone == "START":
-                # Remove all special characters to isolate text
                 clean_line = line.replace('!', ' ').replace(';', ' ')
-                # Split by any whitespace (handles tabs/multiple spaces)
                 parts = clean_line.split()
                 
                 if len(parts) >= 2:
+                    # Example: C0402 C1
+                    # parts[0] = Footprint/Package
+                    # parts[1] = Designator
                     pkg_id = parts[0]
-                    val = parts[1]
-                    des = parts[-1]
+                    des = parts[1]
+                    # If there's a 3rd part, use it as value, otherwise use footprint as value
+                    val = parts[2] if len(parts) > 2 else pkg_id 
+                    
                     packages.append(f"!{pkg_id}! {val}; {des}")
-                elif len(parts) == 1:
-                    # Fallback for lines with only one identifier
-                    packages.append(f"!{parts[0]}! Unknown; {parts[0]}")
 
             # 3. Extracting Nets with Pin Dash-to-Dot Fix
             elif zone == "END":
-                # U46-C22 -> U46.C22
+                # Replace '-' with '.' for pin numbers
                 processed_line = line.replace('-', '.')
                 clean_line = processed_line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
                 parts = clean_line.split()
@@ -59,7 +64,7 @@ def process_netlist_logic(uploaded_files):
                 if not parts:
                     continue
                 
-                # New Net detection (starts at first column)
+                # New Net detection
                 if not raw_line.startswith((' ', '\t', '*')):
                     current_net = parts[0]
                     if current_net not in nets_data:
@@ -136,11 +141,6 @@ st.markdown(f"""
         font-size: 1.25em !important;
         padding: 20px;
     }}
-
-    .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
-        position: relative;
-        z-index: 10;
-    }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
     """, unsafe_allow_html=True)
@@ -157,7 +157,6 @@ if uploaded_files:
     with col2:
         st.subheader("File Settings")
         original_name = uploaded_files[0].name.rsplit('.', 1)[0]
-        
         custom_name = st.text_input("SET OUTPUT FILENAME:", value=f"{original_name}_transformed")
         full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
         
