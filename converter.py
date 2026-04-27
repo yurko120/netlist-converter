@@ -3,91 +3,80 @@ import io
 import datetime
 
 # --- CORE LOGIC ---
-def process_netlist_logic(uploaded_files):
-    all_results = []
-    for uploaded_file in uploaded_files:
-        content = uploaded_file.getvalue().decode('cp1255', errors='ignore')
-        lines = content.splitlines()
-        zone = None
-        packages = []
-        nets_data = {}
-        current_net = None
+def process_single_file(uploaded_file):
+    """Processes a single file and returns the transformed string."""
+    content = uploaded_file.getvalue().decode('cp1255', errors='ignore')
+    lines = content.splitlines()
+    zone = None
+    packages = []
+    nets_data = {}
+    current_net = None
 
-        for line in lines:
-            raw_line = line 
-            line = line.strip()
+    for line in lines:
+        raw_line = line 
+        line = line.strip()
+        if not line:
+            continue
             
-            if not line:
-                continue
-                
-            upper_line = line.upper()
+        upper_line = line.upper()
+        
+        # 1. Zone Detection
+        if any(k in upper_line for k in ["PART", "PACKAGES", "$PACKAGES"]):
+            zone = "START"
+            continue
+        elif any(k in upper_line for k in ["$NETS", "NET"]):
+            zone = "END"
+            continue
+        elif upper_line.startswith('$'):
+            zone = None
+            continue
+
+        # 2. Extracting Packages
+        if zone == "START":
+            temp_line = line.replace('!', ' ').replace(';', ' ')
+            parts = temp_line.split()
             
-            # 1. Zone Detection
-            if any(k in upper_line for k in ["PART", "PACKAGES", "$PACKAGES"]):
-                zone = "START"
-                continue
-            elif any(k in upper_line for k in ["$NETS", "NET"]):
-                zone = "END"
-                continue
-            elif upper_line.startswith('$'):
-                zone = None
-                continue
-
-            # 2. Extracting Packages
-            if zone == "START":
-                # Clean line to identify parts
-                temp_line = line.replace('!', ' ').replace(';', ' ')
-                parts = temp_line.split()
+            if len(parts) >= 2:
+                pkg_id = parts[0].replace('.', '_')
+                des = parts[-1]
                 
-                if len(parts) >= 2:
-                    # pkg_id (Footprint) - REPLACING DOTS WITH UNDERSCORE
-                    pkg_id = parts[0].replace('.', '_')
-                    # des (Designator) - usually the last part
-                    des = parts[-1]
-                    
-                    # Check if there is a 3rd column for Value
-                    if len(parts) > 2:
-                        val = parts[1]
-                        packages.append(f"!{pkg_id}! {val}; {des}")
-                    else:
-                        # Empty value column, keeping the ";" and spaces
-                        packages.append(f"!{pkg_id}! ; {des}")
-
-            # 3. Extracting Nets with Pin Dash-to-Dot Fix
-            elif zone == "END":
-                # Convert dash to dot for pins (e.g., U46-C22 -> U46.C22)
-                processed_line = line.replace('-', '.')
-                clean_line = processed_line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
-                parts = clean_line.split()
-                
-                if not parts:
-                    continue
-                
-                if not raw_line.startswith((' ', '\t', '*')):
-                    current_net = parts[0]
-                    if current_net not in nets_data:
-                        nets_data[current_net] = []
-                    nets_data[current_net].extend(parts[1:])
+                if len(parts) > 2:
+                    val = parts[1]
+                    packages.append(f"!{pkg_id}! {val}; {des}")
                 else:
-                    if current_net:
-                        nets_data[current_net].extend(parts)
+                    packages.append(f"!{pkg_id}! ; {des}")
 
-        # Final Assembly
-        final_output = ["$PACKAGES"]
-        final_output.extend(packages)
-        final_output.append("$NETS")
-        for net_name, pins in nets_data.items():
-            actual_pins = [p.strip() for p in pins if p.strip() and p.strip() != ';']
-            if not actual_pins: continue
+        # 3. Extracting Nets
+        elif zone == "END":
+            processed_line = line.replace('-', '.')
+            clean_line = processed_line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
+            parts = clean_line.split()
             
-            for i in range(0, len(actual_pins), 10):
-                chunk = actual_pins[i:i+10]
-                final_output.append(f"{net_name}; {' '.join(chunk)}")
-        
-        final_output.append("$End")
-        all_results.append("\n".join(final_output))
-        
-    return "\n\n".join(all_results)
+            if not parts:
+                continue
+            
+            if not raw_line.startswith((' ', '\t', '*')):
+                current_net = parts[0]
+                if current_net not in nets_data:
+                    nets_data[current_net] = []
+                nets_data[current_net].extend(parts[1:])
+            else:
+                if current_net:
+                    nets_data[current_net].extend(parts)
+
+    # Final Assembly for the file
+    final_output = ["$PACKAGES"]
+    final_output.extend(packages)
+    final_output.append("$NETS")
+    for net_name, pins in nets_data.items():
+        actual_pins = [p.strip() for p in pins if p.strip() and p.strip() != ';']
+        if not actual_pins: continue
+        for i in range(0, len(actual_pins), 10):
+            chunk = actual_pins[i:i+10]
+            final_output.append(f"{net_name}; {' '.join(chunk)}")
+    
+    final_output.append("$End")
+    return "\n".join(final_output)
 
 # --- UI LAYOUT ---
 st.set_page_config(page_title="Mind-Board Converter", layout="wide")
@@ -126,7 +115,6 @@ st.markdown(f"""
         font-weight: 900 !important; 
         color: #000000 !important;
         text-transform: uppercase;
-        margin-bottom: 12px !important;
     }}
 
     .stTextArea textarea {{
@@ -136,8 +124,7 @@ st.markdown(f"""
         color: #000000 !important;
         font-family: 'Courier New', monospace;
         font-weight: 800 !important; 
-        font-size: 1.25em !important;
-        padding: 20px;
+        font-size: 1.1em !important;
     }}
     </style>
     <h1 class="centered-title">Welcome to Mind-Board Converter</h1>
@@ -150,22 +137,38 @@ with col1:
     uploaded_files = st.file_uploader("Upload .NET files", accept_multiple_files=True, label_visibility="collapsed")
 
 if uploaded_files:
-    result_text = process_netlist_logic(uploaded_files)
+    processed_results = []
+    for f in uploaded_files:
+        processed_results.append({
+            "name": f.name,
+            "content": process_single_file(f)
+        })
     
     with col2:
-        st.subheader("File Settings")
-        original_name = uploaded_files[0].name.rsplit('.', 1)[0]
-        custom_name = st.text_input("SET OUTPUT FILENAME:", value=f"{original_name}_transformed")
-        full_filename = custom_name if custom_name.endswith(('.txt', '.net')) else f"{custom_name}.txt"
-        
-        st.download_button(
-            label=f"📥 Download {full_filename}",
-            data=result_text,
-            file_name=full_filename,
-            mime="text/plain",
-            use_container_width=True
-        )
+        st.subheader("Download Center")
+        # For simplicity in naming, we use the first file's name as a base if downloading a combined blob, 
+        # but usually, users want to check them one by one.
+        for idx, res in enumerate(processed_results):
+            original_name = res["name"].rsplit('.', 1)[0]
+            st.download_button(
+                label=f"📥 Download {original_name}_transformed.txt",
+                data=res["content"],
+                file_name=f"{original_name}_transformed.txt",
+                mime="text/plain",
+                key=f"dl_{idx}",
+                use_container_width=True
+            )
 
     st.divider()
-    st.subheader("🔍 Technical Preview")
-    st.text_area("Final netlist structure:", value=result_text, height=600)
+    st.subheader("🔍 Technical Preview (Per File)")
+    
+    # Create Tabs for each file
+    tab_titles = [res["name"] for res in processed_results]
+    tabs = st.tabs(tab_titles)
+    
+    for idx, tab in enumerate(tabs):
+        with tab:
+            st.text_area(f"Preview for {processed_results[idx]['name']}:", 
+                         value=processed_results[idx]['content'], 
+                         height=500, 
+                         key=f"text_{idx}")
