@@ -76,8 +76,8 @@ st.markdown(f"""
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
         background-attachment: fixed;
-        /* Positioned significantly lower (40%) to align upper lines with upload box */
-        background-position: center 40%; 
+        /* Positioned at 55% to ensure lines align with the uploader box */
+        background-position: center 55%; 
         background-size: 65%; 
     }}
     
@@ -90,12 +90,12 @@ st.markdown(f"""
         z-index: -1;
     }}
 
-    /* Title styling */
+    /* Title styling - Increased bottom padding for layout clarity */
     .centered-title {{
         text-align: center;
         width: 100%;
         padding-top: 5px;
-        padding-bottom: 60px; 
+        padding-bottom: 100px; 
         font-size: 4em !important; 
         font-weight: 900 !important; 
         color: #002366; 
@@ -103,13 +103,13 @@ st.markdown(f"""
         margin-left: -3% !important;
     }}
     
-    /* Ensure UI components sit above background */
+    /* UI components above background */
     .stMarkdown, .stFileUploader, .stButton, .stTextArea, .stSubheader, .stDivider {{
         position: relative;
         z-index: 10;
     }}
 
-    /* Uploader vertical spacing */
+    /* Vertical spacing adjustment */
     [data-testid="stFileUploader"] {{
         margin-top: 50px;
     }}
