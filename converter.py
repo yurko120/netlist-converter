@@ -16,6 +16,7 @@ def process_netlist_logic(uploaded_files):
         for line in lines:
             upper_line = line.upper()
             
+            # Zone detection
             if "PART" in upper_line or "PACKAGES" in upper_line:
                 zone = "START"
                 continue
@@ -23,9 +24,10 @@ def process_netlist_logic(uploaded_files):
                 zone = "END"
                 continue
             
-            if not line or line.startswith('%'):
+            if not line or line.startswith('%') or line.upper() == "$END":
                 continue
 
+            # --- PACKAGES ZONE ---
             if zone == "START":
                 parts = [p for p in line.split(' ') if p]
                 if len(parts) >= 2:
@@ -39,48 +41,50 @@ def process_netlist_logic(uploaded_files):
                         des = parts[1].replace(';', '')
                         packages.append(f"{pkg_str}; {des}")
 
+            # --- NETS ZONE ---
             elif zone == "END":
+                # Cleaning line from legacy semicolons and commas
+                clean_line = line.replace(',', ' ').replace(';', ' ')
+                
                 if line.startswith('*'):
                     if current_net:
-                        # Add pins from continuation lines to the dictionary
-                        pins = line[1:].replace(',', ' ').replace(';', ' ').split()
-                        nets_data[current_net].extend(pins)
+                        new_pins = clean_line[1:].strip().split()
+                        nets_data[current_net].extend(new_pins)
                 else:
-                    parts = line.replace(',', ' ').split()
+                    parts = clean_line.split()
                     if parts:
-                        # Extract net name correctly without semicolon
-                        net_name = parts[0].split(';')[0].strip()
+                        net_name = parts[0].strip()
                         current_net = net_name
                         if current_net not in nets_data:
                             nets_data[current_net] = []
-                        # Add initial pins from the first net line
-                        pins = " ".join(parts[1:]).replace(';', ' ').split()
-                        nets_data[current_net].extend(pins)
+                        new_pins = parts[1:]
+                        nets_data[current_net].extend(new_pins)
 
-        # Build the final document
+        # --- FINAL ASSEMBLY ---
         final_output.append("$PACKAGES")
         final_output.extend(packages)
         final_output.append("$NETS")
         
         for net_name, pins in nets_data.items():
-            if not pins:
+            # Remove any empty strings from pin list
+            actual_pins = [p for p in pins if p.strip()]
+            if not actual_pins:
                 continue
             
-            # THE FIX: Split pins into chunks of 10
-            # Each line starts with: NetName; Pin1 Pin2 ... Pin10
-            for i in range(0, len(pins), 10):
-                chunk = pins[i:i+10]
-                line_content = f"{net_name}; {' '.join(chunk)}"
-                final_output.append(line_content)
+            # MANDATORY RULE OF 10: Every line starts with NetName;
+            for i in range(0, len(actual_pins), 10):
+                chunk = actual_pins[i:i+10]
+                # THIS IS THE KEY: Every line is built as [NetName]; [Pins]
+                final_output.append(f"{net_name}; {' '.join(chunk)}")
         
         final_output.append("$End")
 
     return "\n".join(final_output)
 
-# UI Settings
+# Streamlit Interface
 st.set_page_config(page_title="Netlist Converter", page_icon="⚡")
 st.title("⚡ Altium to Allegro Netlist Converter")
-st.write("Convert .NET files with mandatory Net Name on every line (Rule of 10).")
+st.write("Mandatory Rule: Every line starts with Net Name (Max 10 pins per line).")
 
 uploaded_files = st.file_uploader("Upload NET files", accept_multiple_files=True)
 
