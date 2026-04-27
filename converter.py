@@ -71,6 +71,7 @@ logo_url = "https://raw.githubusercontent.com/yurko120/netlist-converter/main/.d
 
 st.markdown(f"""
     <style>
+    /* Background and Logo */
     .stApp {{
         background-image: url("{logo_url}");
         background-repeat: no-repeat;
@@ -96,20 +97,21 @@ st.markdown(f"""
         color: #002366; 
     }}
 
-    /* ULTRA TRANSPARENT BOX WITH BOLD TEXT */
+    /* PREVIEW BOX: Increased transparency by 80% */
     .stTextArea textarea {{
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        background-color: rgba(255, 255, 255, 0.02) !important; /* Extremely transparent */
+        backdrop-filter: blur(4px); /* Reduced blur to keep background sharp */
+        border: 1px solid rgba(0, 0, 0, 0.05);
         border-radius: 12px;
         color: #000000 !important;
         font-family: 'Courier New', monospace;
-        font-weight: 800 !important; /* Bold text */
-        font-size: 1.1em !important;
+        font-weight: 800 !important; /* Bold for readability on transparent background */
+        font-size: 1.15em !important;
         line-height: 1.6;
-        padding: 20px;
+        padding: 25px;
     }}
 
+    /* Buttons */
     div.stButton > button {{
         transition: all 0.3s ease;
         border-radius: 8px;
