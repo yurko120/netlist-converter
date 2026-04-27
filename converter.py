@@ -17,7 +17,6 @@ def process_netlist_logic(uploaded_files):
             raw_line = line 
             line = line.strip()
             
-            # Skip empty lines
             if not line:
                 continue
                 
@@ -34,29 +33,29 @@ def process_netlist_logic(uploaded_files):
                 zone = None
                 continue
 
-            # Skip comments ONLY if they are not part of a known header
             if line.startswith('%') and zone is None:
                 continue
 
-            # 2. Extracting Packages (Handles 2 or 3 column formats)
+            # 2. Extracting Packages - Fixed Column Assignment
             if zone == "START":
                 clean_line = line.replace('!', ' ').replace(';', ' ')
                 parts = clean_line.split()
                 
                 if len(parts) >= 2:
-                    # Example: C0402 C1
-                    # parts[0] = Footprint/Package
-                    # parts[1] = Designator
+                    # Based on your example: "AMP-796136-1 B1"
+                    # parts[0] is the Footprint/Package (AMP-796136-1)
+                    # parts[1] is the Designator (B1)
                     pkg_id = parts[0]
                     des = parts[1]
-                    # If there's a 3rd part, use it as value, otherwise use footprint as value
-                    val = parts[2] if len(parts) > 2 else pkg_id 
                     
+                    # We set the Value to be the same as Package to avoid shifting names
+                    val = pkg_id 
+                    
+                    # Result: !AMP-796136-1! AMP-796136-1; B1
                     packages.append(f"!{pkg_id}! {val}; {des}")
 
             # 3. Extracting Nets with Pin Dash-to-Dot Fix
             elif zone == "END":
-                # Replace '-' with '.' for pin numbers
                 processed_line = line.replace('-', '.')
                 clean_line = processed_line.replace(',', ' ').replace(';', ' ').replace('*', ' ')
                 parts = clean_line.split()
@@ -64,7 +63,6 @@ def process_netlist_logic(uploaded_files):
                 if not parts:
                     continue
                 
-                # New Net detection
                 if not raw_line.startswith((' ', '\t', '*')):
                     current_net = parts[0]
                     if current_net not in nets_data:
